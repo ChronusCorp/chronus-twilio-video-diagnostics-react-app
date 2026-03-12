@@ -32,3 +32,4 @@ serviceAccountKey.json
 # lambda build artifacts
 lambda-package/
 lambda-deployment.zip
+build.zip
