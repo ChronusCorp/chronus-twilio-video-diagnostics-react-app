@@ -1,0 +1,8 @@
+{
+  "name": "twilio-video-diagnostics-lambda",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "twilio": "^3.63.1"
+  }
+}

@@ -28,3 +28,7 @@ yarn-error.log*
 test-reports
 junit.xml
 serviceAccountKey.json
+
+# lambda build artifacts
+lambda-package/
+lambda-deployment.zip

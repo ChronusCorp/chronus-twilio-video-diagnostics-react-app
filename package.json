@@ -45,7 +45,8 @@
     "test:ci:serverless": "jest -c jest.serverless.config.js --ci --runInBand",
     "serverless:deploy": "npm run build && node serverless/scripts/deploy.js",
     "serverless:remove": "node serverless/scripts/remove.js",
-    "serverless:list": "node serverless/scripts/list.js"
+    "serverless:list": "node serverless/scripts/list.js",
+    "lambda:build": "rm -rf lambda-package lambda-deployment.zip && mkdir lambda-package && cp lambda/handler.js lambda/package.json lambda-package/ && cd lambda-package && npm install --production && zip -r ../lambda-deployment.zip . && cd .."
   },
   "eslintConfig": {
     "extends": [

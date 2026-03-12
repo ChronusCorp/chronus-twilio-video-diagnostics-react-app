@@ -13,7 +13,7 @@ export default function useBitrateTest(dispatch: React.Dispatch<ACTIONTYPE>) {
 
     dispatch({ type: 'bitrate-test-started' });
 
-    return axios('app/turn-credentials')
+    return axios(`${window.__RUNTIME_CONFIG__?.TOKEN_SERVER_URL || ''}/app/turn-credentials`)
       .then((response) => {
         const bitrateTest = testMediaConnectionBitrate({ iceServers: response.data.iceServers });
 
