@@ -4,7 +4,7 @@ import express from 'express';
 import path from 'path';
 import { ServerlessFunction } from './types';
 
-const PORT = process.env.PORT ?? 8081;
+const PORT = process.env.PORT ?? 8083;
 
 const app = express();
 app.use(express.json());
