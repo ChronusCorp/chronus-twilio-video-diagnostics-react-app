@@ -94,8 +94,10 @@ Produces `lambda-deployment.zip` containing `handler.js`, `package.json`, and `n
 ### Lambda local tests
 
 ```bash
-nvm run 20 lambda/test-local.js
+nvm run 22 lambda/test-local.js
 ```
+
+The Lambda function runs on the `nodejs22.x` runtime in AWS; use Node 22 locally to keep parity.
 
 ## Updating
 
