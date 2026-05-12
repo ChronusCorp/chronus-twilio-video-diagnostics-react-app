@@ -1,5 +1,7 @@
 import type { ResultsFragment } from './types';
 
+// Browser-only — depends on `fetch` and (in Task 5) `document`/`window` listeners.
+
 export interface TelemetryClientConfig {
   endpoint: string;
   token: string;
@@ -46,8 +48,12 @@ export function createTelemetryClient(config: TelemetryClientConfig): TelemetryC
     });
   }
 
+  // onError fires once per failed attempt (phase:'fetch') AND once at the end
+  // when all attempts fail (phase:'give-up'). Consumers should de-duplicate
+  // by phase if they don't want both.
   async function sendWithRetry(fragment: ResultsFragment): Promise<void> {
     if (disabled) return;
+    // Shallow merge — extractors always produce a complete top-level subtree.
     pendingUnacked = { ...pendingUnacked, ...fragment };
 
     for (let attempt = 1; attempt <= retry.attempts; attempt++) {
