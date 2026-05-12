@@ -86,3 +86,78 @@ describe('telemetryClient — core', () => {
     expect(onError).toHaveBeenCalled();
   });
 });
+
+describe('telemetryClient — retry & recovery', () => {
+  let fetchMock: jest.Mock;
+
+  beforeEach(() => {
+    fetchMock = jest.fn();
+  });
+
+  it('retries on 5xx and succeeds on the second attempt', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 503 }).mockResolvedValueOnce({ ok: true, status: 204 });
+
+    const client = createTelemetryClient({
+      ...baseConfig,
+      fetchImpl: fetchMock,
+      retry: { attempts: 3, baseDelayMs: 0 },
+    });
+    client.recordStep({ camera: { ok: true } });
+    await flushPromises();
+    await flushPromises();
+    await flushPromises();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('retains unacked data and resends it with the next step when retries exhaust', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 500 });
+
+    const client = createTelemetryClient({
+      ...baseConfig,
+      fetchImpl: fetchMock,
+      retry: { attempts: 2, baseDelayMs: 0 },
+    });
+    client.recordStep({ camera: { ok: true } });
+    await flushPromises();
+    await flushPromises();
+    await flushPromises();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).results).toEqual({ camera: { ok: true } });
+
+    fetchMock.mockResolvedValue({ ok: true, status: 204 });
+    client.recordStep({ microphone: { ok: true } });
+    await flushPromises();
+    await flushPromises();
+
+    expect(JSON.parse(fetchMock.mock.calls[2][1].body).results).toEqual({
+      camera: { ok: true },
+      microphone: { ok: true },
+    });
+  });
+
+  it('does not retry on 4xx and disables further sends', async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 401 });
+    const onError = jest.fn();
+
+    const client = createTelemetryClient({
+      ...baseConfig,
+      fetchImpl: fetchMock,
+      onError,
+      retry: { attempts: 3, baseDelayMs: 0 },
+    });
+    client.recordStep({ camera: { ok: true } });
+    await flushPromises();
+    await flushPromises();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('401') }), {
+      phase: '4xx',
+    });
+
+    client.recordStep({ microphone: { ok: true } });
+    await flushPromises();
+    expect(fetchMock).toHaveBeenCalledTimes(1); // no new send
+  });
+});
