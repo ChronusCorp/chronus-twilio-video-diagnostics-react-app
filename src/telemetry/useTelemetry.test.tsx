@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react-hooks';
 import { useTelemetry } from './useTelemetry';
-import { ActivePane } from '../components/AppStateProvider/AppStateProvider';
+import { ActivePane } from '../components/AppStateProvider/types';
 
 const fullClaims = {
   v: 1,
