@@ -3,8 +3,6 @@ import { createTheme } from '@material-ui/core';
 declare module '@material-ui/core/styles/createTheme' {
   interface Theme {
     navHeight: number;
-    brandSidebarWidth: number;
-    tabletBrandSidebarWidth: number;
     backgroundColor: string;
     includeLandscapeMd: string;
   }
@@ -12,8 +10,6 @@ declare module '@material-ui/core/styles/createTheme' {
   // allow configuration using `createTheme`
   interface ThemeOptions {
     navHeight: number;
-    brandSidebarWidth: number;
-    tabletBrandSidebarWidth: number;
     backgroundColor: string;
     includeLandscapeMd: string;
   }
@@ -38,7 +34,6 @@ const BREAKPOINTS = {
   },
 };
 
-const tabletBrandSidebarWidth = 140;
 const includeLandscapeMd = `, screen and (orientation: landscape) and (max-width:${BREAKPOINTS.values.lg - 0.05}px)`;
 
 const defaultTheme = createTheme();
@@ -61,7 +56,7 @@ export default createTheme({
       root: {
         display: 'flow-root',
         width: '950px',
-        maxWidth: `calc(100vw - ${tabletBrandSidebarWidth}px)`,
+        maxWidth: '100vw',
         [defaultTheme.breakpoints.down(BREAKPOINTS.values.md)]: {
           width: '100vw',
           maxWidth: '610px',
@@ -188,8 +183,6 @@ export default createTheme({
     },
   },
   navHeight: 100,
-  brandSidebarWidth: 250,
-  tabletBrandSidebarWidth,
   backgroundColor: '#f4f4f6',
   breakpoints: BREAKPOINTS,
   includeLandscapeMd,

@@ -27,13 +27,12 @@ This application demonstrates a diagnostics tool for testing a participant's abi
 - Approachable UX for non-technical users with access to network statistics for those who need it
 - Downloadable JSON report of the exhaustive test results
 - Customizable and ready for self hosting or embedding into other web applications
-- No costs associated with deploying the app to [Twilio Serverless](https://www.twilio.com/docs/labs/serverless-toolkit)
 
 ## Prerequisites
 
 - A Twilio account. Sign up for free [here](https://www.twilio.com/try-twilio).
-- Node.js v14+
-- NPM v6+ (comes installed with newer Node versions)
+- Node.js v22 recommended (matches the AWS Lambda runtime); v16+ works for the frontend build
+- NPM (whatever ships with your Node version)
 
 ## Install Dependencies
 
@@ -41,28 +40,11 @@ Run `npm install` to install all the dependencies from NPM.
 
 ## Deploy the App
 
-Before deploying the app, add your Twilio Account SID and Auth Token to a `.env` file (see [.env.example](.env.example) for an example). The app is deployed to Twilio with a single command:
+The app is deployed to AWS as a CloudFront distribution fronting an S3 bucket (static React build) and an API Gateway + Lambda (token + TURN credentials). See [DEPLOYMENT.md](DEPLOYMENT.md) for the full architecture, configuration, and step-by-step deploy commands.
 
-    npm run serverless:deploy
+Before deploying, store your Twilio Account SID, API Key SID, and API Key Secret as Lambda environment variables (see [DEPLOYMENT.md](DEPLOYMENT.md#lambda-environment-variables)).
 
-When deployment has finished, the Twilio Serverless URL for the application will be printed to the console. This URL can be used to access the application:
-
-    App deployed to: https://rtc-diagnostics-video-xxxxxxxx-xxxx-dev.twil.io
-
-To view the app URL at any time, you can run the following command:
-
-    npm run serverless:list
-
-A few things to note:
-
-- The serverless deployment will expire after one week and is not meant for production
-- When hosting this application, we recommend you use the same domain as your video service. This will ensure the end-user's device access and permissions for the diagnostics tests align with those of your video application.
-
-## Delete the App
-
-To remove the Serverless app from Twilio, run the following command:
-
-    npm run serverless:remove
+When hosting this application, we recommend you serve it from the same domain as your video service. This ensures the end-user's device access and permissions for the diagnostics tests align with those of your video application.
 
 ## Local Development
 
@@ -89,9 +71,9 @@ You will also see any linting errors in the console. If you need to run only the
 
     npm run server
 
-The token server runs on port 8081.
+The token server runs on port 8083.
 
-The server provided with this application uses the same endpoints as the [serverless](serverless/functions/app) endpoints that are used when the app is deployed to Twilio Serverless.
+The server provided with this application exposes the same `/app/token` and `/app/turn-credentials` endpoints as the [Lambda handler](lambda/handler.js) used in production, so the React app calls identical relative URLs in both environments.
 
 ## Building
 
@@ -104,8 +86,6 @@ This will build the static assets for the application in the `build/` directory.
 ## Tests
 
 Run `npm test` to run all unit tests.
-
-Run `npm run test:serverless` to run all unit and E2E tests on the Serverless scripts. This requires that your Twilio account credentials are stored in the `.env` file.
 
 ## License
 

@@ -371,7 +371,7 @@ export const AppStateProvider: React.FC = ({ children }) => {
   useEffect(() => {
     navigator.mediaDevices.enumerateDevices().then((devices) => dispatch({ type: 'set-devices', devices }));
 
-    axios(`${window.__RUNTIME_CONFIG__?.TOKEN_SERVER_URL || ''}/app/token`).catch((error: AxiosError) => {
+    axios('/app/token').catch((error: AxiosError) => {
       if (error.response?.data?.error?.message === 'token server expired') {
         dispatch({ type: 'set-app-is-expired' });
       }
