@@ -37,7 +37,7 @@ describe('parseToken', () => {
     expect(parseToken('?t=onlyonesegment')).toEqual({ mode: 'demo', reason: 'malformed' });
   });
 
-  it.each(['endpoint', 'organization_id', 'member_id', 'meeting_id'] as const)(
+  it.each(['endpoint', 'organization_id', 'member_id', 'meeting_id', 'exp'] as const)(
     'returns demo mode when %s claim is missing',
     (claim) => {
       const { [claim]: _omit, ...rest } = validClaims;
@@ -54,5 +54,13 @@ describe('parseToken', () => {
   it('returns demo mode when exp is in the past', () => {
     const result = parseToken(`?t=${buildToken({ ...validClaims, exp: 1 })}`);
     expect(result).toEqual({ mode: 'demo', reason: 'expired-locally' });
+  });
+
+  it('returns demo mode for a 3-segment token (real JWT, not our format)', () => {
+    expect(parseToken('?t=a.b.c')).toEqual({ mode: 'demo', reason: 'malformed' });
+  });
+
+  it('returns demo mode when the payload segment is empty', () => {
+    expect(parseToken('?t=.sig')).toEqual({ mode: 'demo', reason: 'malformed' });
   });
 });

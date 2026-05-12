@@ -14,7 +14,8 @@ function isValidClaims(c: unknown): c is TokenClaims {
     o.endpoint.startsWith('https://') &&
     typeof o.organization_id === 'number' &&
     typeof o.member_id === 'number' &&
-    typeof o.meeting_id === 'number'
+    typeof o.meeting_id === 'number' &&
+    typeof o.exp === 'number'
   );
 }
 
