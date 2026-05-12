@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import type UAParser from 'ua-parser-js';
-import { ActivePane } from '../components/AppStateProvider/AppStateProvider';
+import { ActivePane } from '../components/AppStateProvider/types';
 import { parseToken } from './parseToken';
 import { createTelemetryClient, type TelemetryClient } from './telemetryClient';
 import {

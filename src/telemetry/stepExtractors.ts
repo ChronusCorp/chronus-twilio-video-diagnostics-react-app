@@ -7,7 +7,7 @@ import type {
   MediaConnectionBitrateTest,
   VideoInputTest,
 } from '@twilio/rtc-diagnostics';
-import type { TwilioStatus } from '../components/AppStateProvider/AppStateProvider';
+import type { TwilioStatus } from '../components/AppStateProvider/types';
 
 export function extractBrowser(ua: UAParser.IResult): ResultsFragment {
   const name = ua.browser?.name;
