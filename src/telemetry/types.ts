@@ -25,6 +25,7 @@ export interface ResultsFragment {
     turn_reachable?: boolean;
     rtt_ms?: number;
     jitter_ms?: number;
+    error?: string;
   };
   twilio_services?: Record<string, string>;
   bitrate?: { ok: boolean; max_kbps?: number; average_kbps?: number; error?: string };

@@ -49,8 +49,20 @@ export function extractSpeaker(report: AudioOutputTest.Report): ResultsFragment 
 export function extractNetwork(
   report: PreflightTestReport | null,
   signalingReachable: boolean,
-  turnReachable: boolean
+  turnReachable: boolean,
+  error?: Error | null,
+  tokenError?: Error | null
 ): ResultsFragment {
+  if (tokenError || error) {
+    return {
+      network: {
+        ok: false,
+        signaling_reachable: signalingReachable,
+        turn_reachable: turnReachable,
+        error: (tokenError ?? error)!.message,
+      },
+    };
+  }
   if (!signalingReachable) {
     return { network: { ok: false, signaling_reachable: false, turn_reachable: turnReachable } };
   }

@@ -91,6 +91,18 @@ describe('stepExtractors', () => {
         network: { ok: true, signaling_reachable: true, turn_reachable: true },
       });
     });
+    it('returns ok=false with error message when preflight has a regular error', () => {
+      const err = new Error('TURN unreachable');
+      expect(extractNetwork(null, true, false, err, null)).toEqual({
+        network: { ok: false, signaling_reachable: true, turn_reachable: false, error: 'TURN unreachable' },
+      });
+    });
+    it('returns ok=false with token error message when preflight has a tokenError', () => {
+      const tokenErr = new Error('token server expired');
+      expect(extractNetwork(null, true, true, null, tokenErr)).toEqual({
+        network: { ok: false, signaling_reachable: true, turn_reachable: true, error: 'token server expired' },
+      });
+    });
   });
 
   describe('extractTwilioServices', () => {

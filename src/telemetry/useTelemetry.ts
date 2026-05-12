@@ -30,6 +30,8 @@ interface AppLikeState {
     report: any;
     signalingGatewayReachable: boolean;
     turnServersReachable: boolean;
+    error: Error | null;
+    tokenError: Error | null;
   };
   preflightTestFinished: boolean;
   twilioStatus: any;
@@ -98,7 +100,9 @@ export function useTelemetry(state: AppLikeState, userAgent: UAParser.IResult): 
         extractNetwork(
           state.preflightTest.report,
           state.preflightTest.signalingGatewayReachable,
-          state.preflightTest.turnServersReachable
+          state.preflightTest.turnServersReachable,
+          state.preflightTest.error,
+          state.preflightTest.tokenError
         )
       );
       sent.network = true;
