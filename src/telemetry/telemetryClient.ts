@@ -1,6 +1,6 @@
 import type { ResultsFragment } from './types';
 
-// Browser-only — depends on `fetch` and (in Task 5) `document`/`window` listeners.
+// Browser-only — depends on `fetch` and `document`/`window` listeners.
 
 export interface TelemetryClientConfig {
   endpoint: string;
@@ -28,6 +28,7 @@ export function createTelemetryClient(config: TelemetryClientConfig): TelemetryC
   let queue: Promise<void> = Promise.resolve();
   let disabled = false;
   let pendingUnacked: ResultsFragment = {};
+  let flushed = false;
 
   function buildBody(fragment: ResultsFragment): string {
     return JSON.stringify({
@@ -36,7 +37,7 @@ export function createTelemetryClient(config: TelemetryClientConfig): TelemetryC
     });
   }
 
-  async function sendOnce(fragment: ResultsFragment, opts: { keepalive: boolean }): Promise<Response> {
+  function sendOnce(fragment: ResultsFragment, opts: { keepalive: boolean }): Promise<Response> {
     return fetchImpl(config.endpoint, {
       method: 'POST',
       keepalive: opts.keepalive,
@@ -83,6 +84,24 @@ export function createTelemetryClient(config: TelemetryClientConfig): TelemetryC
     queue = queue.then(() => sendWithRetry(fragment)).catch(() => {});
   }
 
+  function flushOnUnload(): void {
+    if (flushed || disabled) return;
+    if (Object.keys(pendingUnacked).length === 0) return;
+    flushed = true;
+    try {
+      sendOnce(pendingUnacked, { keepalive: true }).catch(() => {});
+    } catch (e) {
+      onError(e as Error, { phase: 'unload' });
+    }
+  }
+
+  function onVisibilityChange() {
+    if (document.visibilityState === 'hidden') flushOnUnload();
+  }
+
+  document.addEventListener('visibilitychange', onVisibilityChange);
+  window.addEventListener('pagehide', flushOnUnload);
+
   return {
     recordStep(fragment) {
       enqueue(fragment);
@@ -90,11 +109,10 @@ export function createTelemetryClient(config: TelemetryClientConfig): TelemetryC
     complete(finalFragment) {
       enqueue({ ...finalFragment, completed: true });
     },
-    flushOnUnload() {
-      // implemented in Task 5
-    },
+    flushOnUnload,
     destroy() {
-      // implemented in Task 5
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('pagehide', flushOnUnload);
     },
   };
 }

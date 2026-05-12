@@ -161,3 +161,75 @@ describe('telemetryClient — retry & recovery', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1); // no new send
   });
 });
+
+describe('telemetryClient — unload flush', () => {
+  let fetchMock: jest.Mock;
+  let originalVisibility: PropertyDescriptor | undefined;
+
+  beforeEach(() => {
+    fetchMock = jest.fn().mockResolvedValue({ ok: true, status: 204 });
+    originalVisibility = Object.getOwnPropertyDescriptor(document, 'visibilityState');
+  });
+
+  afterEach(() => {
+    if (originalVisibility) Object.defineProperty(document, 'visibilityState', originalVisibility);
+  });
+
+  function setHidden() {
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+  }
+
+  it('sends keepalive fetch on visibilitychange→hidden when buffer is non-empty', async () => {
+    // Make the first POST never resolve so the buffer is non-empty when we go hidden.
+    fetchMock.mockImplementationOnce(() => new Promise(() => {}));
+    const client = createTelemetryClient({ ...baseConfig, fetchImpl: fetchMock });
+    client.recordStep({ camera: { ok: true } });
+    await flushPromises();
+
+    setHidden();
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1][1].keepalive).toBe(true);
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).results).toEqual({ camera: { ok: true } });
+
+    client.destroy();
+  });
+
+  it('sends keepalive fetch on pagehide when buffer is non-empty', async () => {
+    fetchMock.mockImplementationOnce(() => new Promise(() => {}));
+    const client = createTelemetryClient({ ...baseConfig, fetchImpl: fetchMock });
+    client.recordStep({ microphone: { ok: true } });
+    await flushPromises();
+
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1][1].keepalive).toBe(true);
+    client.destroy();
+  });
+
+  it('does not send on unload when buffer is empty', async () => {
+    const client = createTelemetryClient({ ...baseConfig, fetchImpl: fetchMock });
+    // No recordStep — buffer empty.
+    setHidden();
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    client.destroy();
+  });
+
+  it('destroy removes the listeners', async () => {
+    fetchMock.mockImplementationOnce(() => new Promise(() => {}));
+    const client = createTelemetryClient({ ...baseConfig, fetchImpl: fetchMock });
+    client.recordStep({ camera: { ok: true } });
+    await flushPromises();
+
+    client.destroy();
+    setHidden();
+    document.dispatchEvent(new Event('visibilitychange'));
+    window.dispatchEvent(new Event('pagehide'));
+
+    expect(fetchMock).toHaveBeenCalledTimes(1); // only the original recordStep call
+  });
+});
