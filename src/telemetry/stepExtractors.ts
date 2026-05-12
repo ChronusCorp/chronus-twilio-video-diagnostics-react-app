@@ -25,11 +25,10 @@ export function extractPermissions(audioGranted: boolean, videoGranted: boolean)
 }
 
 export function extractCamera(report: VideoInputTest.Report): ResultsFragment {
-  const device = (report as any).deviceName as string | undefined;
   if (report.errors && report.errors.length > 0) {
-    return { camera: { ok: false, ...(device && { device }), error: report.errors[0].name } };
+    return { camera: { ok: false, error: report.errors[0].name } };
   }
-  return { camera: { ok: true, ...(device && { device }) } };
+  return { camera: { ok: true } };
 }
 
 export function extractMicrophone(report: AudioInputTest.Report): ResultsFragment {
@@ -37,7 +36,7 @@ export function extractMicrophone(report: AudioInputTest.Report): ResultsFragmen
     return { microphone: { ok: false, error: report.errors[0].name } };
   }
   const max = report.values && report.values.length > 0 ? Math.max(...report.values) : undefined;
-  return { microphone: { ok: true, ...(max !== undefined && { input_level_db: max }) } };
+  return { microphone: { ok: true, ...(max !== undefined && { input_level: max }) } };
 }
 
 export function extractSpeaker(report: AudioOutputTest.Report): ResultsFragment {
@@ -78,6 +77,9 @@ export function extractBitrate(
 ): ResultsFragment {
   if (error) return { bitrate: { ok: false, error: error.message } };
   if (!report) return { bitrate: { ok: false, error: 'no-report' } };
+  if (report.errors && report.errors.length > 0) {
+    return { bitrate: { ok: false, error: report.errors[0].name } };
+  }
   const max = report.values && report.values.length > 0 ? Math.max(...report.values) : undefined;
   return {
     bitrate: {

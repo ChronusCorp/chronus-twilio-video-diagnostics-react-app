@@ -36,22 +36,20 @@ describe('stepExtractors', () => {
   });
 
   describe('extractCamera', () => {
-    it('returns ok=true with device label on success', () => {
-      const report = { errors: [], deviceId: '', deviceName: 'FaceTime HD' } as any;
-      expect(extractCamera(report)).toEqual({ camera: { ok: true, device: 'FaceTime HD' } });
+    it('returns ok=true on success', () => {
+      const report = { errors: [] } as any;
+      expect(extractCamera(report)).toEqual({ camera: { ok: true } });
     });
     it('returns ok=false with error on failure', () => {
-      const report = { errors: [{ name: 'NotReadableError', message: 'in use' }], deviceName: 'FaceTime HD' } as any;
-      expect(extractCamera(report)).toEqual({
-        camera: { ok: false, device: 'FaceTime HD', error: 'NotReadableError' },
-      });
+      const report = { errors: [{ name: 'NotReadableError', message: 'in use' }] } as any;
+      expect(extractCamera(report)).toEqual({ camera: { ok: false, error: 'NotReadableError' } });
     });
   });
 
   describe('extractMicrophone', () => {
     it('returns ok=true with input level on success', () => {
       const report = { errors: [], values: [-30, -20, -10] } as any;
-      expect(extractMicrophone(report)).toEqual({ microphone: { ok: true, input_level_db: -10 } });
+      expect(extractMicrophone(report)).toEqual({ microphone: { ok: true, input_level: -10 } });
     });
     it('returns ok=false with error on failure', () => {
       const report = { errors: [{ name: 'NotAllowedError' }], values: [] } as any;
@@ -87,6 +85,12 @@ describe('stepExtractors', () => {
         network: { ok: false, signaling_reachable: false, turn_reachable: false },
       });
     });
+    it('omits rtt_ms and jitter_ms when stats are null', () => {
+      const report = { stats: { rtt: null, jitter: null, packetLoss: null } } as any;
+      expect(extractNetwork(report, true, true)).toEqual({
+        network: { ok: true, signaling_reachable: true, turn_reachable: true },
+      });
+    });
   });
 
   describe('extractTwilioServices', () => {
@@ -107,6 +111,10 @@ describe('stepExtractors', () => {
       expect(extractBitrate(null, new Error('TURN unreachable'))).toEqual({
         bitrate: { ok: false, error: 'TURN unreachable' },
       });
+    });
+    it('returns ok=false when report has errors and no explicit Error arg', () => {
+      const report = { values: [], averageBitrate: 0, errors: [{ name: 'TURNError' }] } as any;
+      expect(extractBitrate(report)).toEqual({ bitrate: { ok: false, error: 'TURNError' } });
     });
   });
 });

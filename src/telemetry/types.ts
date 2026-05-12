@@ -16,8 +16,8 @@ export type TelemetryMode =
 export interface ResultsFragment {
   browser?: { ok: boolean; name?: string; version?: string };
   permissions?: { ok: boolean; denied?: string[] };
-  camera?: { ok: boolean; device?: string; error?: string };
-  microphone?: { ok: boolean; input_level_db?: number; error?: string };
+  camera?: { ok: boolean; error?: string };
+  microphone?: { ok: boolean; input_level?: number; error?: string };
   speaker?: { ok: boolean; error?: string };
   network?: {
     ok: boolean;
