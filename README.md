@@ -31,8 +31,8 @@ This application demonstrates a diagnostics tool for testing a participant's abi
 ## Prerequisites
 
 - A Twilio account. Sign up for free [here](https://www.twilio.com/try-twilio).
-- Node.js v22+ (matches the AWS Lambda runtime)
-- NPM v10+ (comes installed with Node 22)
+- Node.js v22 recommended (matches the AWS Lambda runtime); v16+ works for the frontend build
+- NPM (whatever ships with your Node version)
 
 ## Install Dependencies
 

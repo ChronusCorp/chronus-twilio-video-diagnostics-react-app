@@ -111,7 +111,7 @@ aws s3 sync build/ s3://$BUCKET_NAME/ --delete
 aws cloudfront create-invalidation --distribution-id $CF_DIST_ID --paths "/*"
 ```
 
-The CloudFront invalidation is needed because static assets are cached at the edge.
+Invalidates cached static assets at the edge. `/*` covers everything; `/app/*` is included but is a no-op when that behavior is configured uncached (see [CloudFront behaviors](#cloudfront-behaviors)).
 
 ### Backend only
 
@@ -122,4 +122,4 @@ aws lambda update-function-code \
   --zip-file fileb://lambda-deployment.zip
 ```
 
-No CloudFront invalidation needed — the `/app/*` behavior should be configured with caching disabled.
+No CloudFront invalidation needed *assuming* `/app/*` is configured uncached (see [CloudFront behaviors](#cloudfront-behaviors)). If you cache `/app/*`, also invalidate `/app/*` after backend updates.
