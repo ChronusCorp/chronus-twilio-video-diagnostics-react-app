@@ -19,7 +19,7 @@ describe('telemetryClient — core', () => {
 
   it('sends a POST with token header and step fragment', async () => {
     const client = createTelemetryClient({ ...baseConfig, fetchImpl: fetchMock });
-    client.recordStep({ camera: { ok: true } });
+    client.recordStep({ videoTestResults: { errors: [] } as any });
     await flushPromises();
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -30,19 +30,21 @@ describe('telemetryClient — core', () => {
     expect(init.headers['Content-Type']).toBe('application/json');
     expect(JSON.parse(init.body)).toEqual({
       diagnostics_page_loaded_at: '2026-05-12T14:23:11.234Z',
-      results: { camera: { ok: true } },
+      results: { videoTestResults: { errors: [] } as any },
     });
   });
 
   it('accumulates step fragments across multiple recordStep calls', async () => {
     const client = createTelemetryClient({ ...baseConfig, fetchImpl: fetchMock });
-    client.recordStep({ camera: { ok: true } });
+    client.recordStep({ videoTestResults: { errors: [] } as any });
     await flushPromises();
-    client.recordStep({ microphone: { ok: true } });
+    client.recordStep({ audioTestResults: { inputTest: { errors: [] } as any, outputTest: null } });
     await flushPromises();
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(JSON.parse(fetchMock.mock.calls[1][1].body).results).toEqual({ microphone: { ok: true } });
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).results).toEqual({
+      audioTestResults: { inputTest: { errors: [] } as any, outputTest: null },
+    });
   });
 
   it('serializes requests (queue is FIFO, no parallel in-flight)', async () => {
@@ -57,8 +59,8 @@ describe('telemetryClient — core', () => {
       .mockResolvedValue({ ok: true, status: 204 });
 
     const client = createTelemetryClient({ ...baseConfig, fetchImpl: fetchMock });
-    client.recordStep({ camera: { ok: true } });
-    client.recordStep({ microphone: { ok: true } });
+    client.recordStep({ videoTestResults: { errors: [] } as any });
+    client.recordStep({ audioTestResults: { inputTest: { errors: [] } as any, outputTest: null } });
     await flushPromises();
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -79,7 +81,7 @@ describe('telemetryClient — core', () => {
       onError,
       retry: { attempts: 1, baseDelayMs: 0 },
     });
-    client.recordStep({ camera: { ok: true } });
+    client.recordStep({ videoTestResults: { errors: [] } as any });
     await flushPromises();
     await flushPromises();
 
@@ -102,7 +104,7 @@ describe('telemetryClient — retry & recovery', () => {
       fetchImpl: fetchMock,
       retry: { attempts: 3, baseDelayMs: 0 },
     });
-    client.recordStep({ camera: { ok: true } });
+    client.recordStep({ videoTestResults: { errors: [] } as any });
     await flushPromises();
     await flushPromises();
     await flushPromises();
@@ -118,22 +120,24 @@ describe('telemetryClient — retry & recovery', () => {
       fetchImpl: fetchMock,
       retry: { attempts: 2, baseDelayMs: 0 },
     });
-    client.recordStep({ camera: { ok: true } });
+    client.recordStep({ videoTestResults: { errors: [] } as any });
     await flushPromises();
     await flushPromises();
     await flushPromises();
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(JSON.parse(fetchMock.mock.calls[1][1].body).results).toEqual({ camera: { ok: true } });
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).results).toEqual({ videoTestResults: { errors: [] } as any });
 
     fetchMock.mockResolvedValue({ ok: true, status: 204 });
-    client.recordStep({ microphone: { ok: true } });
+    client.recordStep({ audioTestResults: { inputTest: { errors: [] } as any, outputTest: null } });
     await flushPromises();
     await flushPromises();
 
+    // Retry buffer accumulates the first failed fragment + the new one; shallow merge is fine
+    // because every section is emitted whole (see buildResultsFragment).
     expect(JSON.parse(fetchMock.mock.calls[2][1].body).results).toEqual({
-      camera: { ok: true },
-      microphone: { ok: true },
+      videoTestResults: { errors: [] },
+      audioTestResults: { inputTest: { errors: [] }, outputTest: null },
     });
   });
 
@@ -147,7 +151,7 @@ describe('telemetryClient — retry & recovery', () => {
       onError,
       retry: { attempts: 3, baseDelayMs: 0 },
     });
-    client.recordStep({ camera: { ok: true } });
+    client.recordStep({ videoTestResults: { errors: [] } as any });
     await flushPromises();
     await flushPromises();
 
@@ -156,7 +160,7 @@ describe('telemetryClient — retry & recovery', () => {
       phase: '4xx',
     });
 
-    client.recordStep({ microphone: { ok: true } });
+    client.recordStep({ audioTestResults: { inputTest: { errors: [] } as any, outputTest: null } });
     await flushPromises();
     expect(fetchMock).toHaveBeenCalledTimes(1); // no new send
   });
@@ -183,7 +187,7 @@ describe('telemetryClient — unload flush', () => {
     // Make the first POST never resolve so the buffer is non-empty when we go hidden.
     fetchMock.mockImplementationOnce(() => new Promise(() => {}));
     const client = createTelemetryClient({ ...baseConfig, fetchImpl: fetchMock });
-    client.recordStep({ camera: { ok: true } });
+    client.recordStep({ videoTestResults: { errors: [] } as any });
     await flushPromises();
 
     setHidden();
@@ -191,7 +195,7 @@ describe('telemetryClient — unload flush', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[1][1].keepalive).toBe(true);
-    expect(JSON.parse(fetchMock.mock.calls[1][1].body).results).toEqual({ camera: { ok: true } });
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).results).toEqual({ videoTestResults: { errors: [] } as any });
 
     client.destroy();
   });
@@ -199,7 +203,7 @@ describe('telemetryClient — unload flush', () => {
   it('sends keepalive fetch on pagehide when buffer is non-empty', async () => {
     fetchMock.mockImplementationOnce(() => new Promise(() => {}));
     const client = createTelemetryClient({ ...baseConfig, fetchImpl: fetchMock });
-    client.recordStep({ microphone: { ok: true } });
+    client.recordStep({ audioTestResults: { inputTest: { errors: [] } as any, outputTest: null } });
     await flushPromises();
 
     window.dispatchEvent(new Event('pagehide'));
@@ -222,7 +226,7 @@ describe('telemetryClient — unload flush', () => {
   it('destroy removes the listeners', async () => {
     fetchMock.mockImplementationOnce(() => new Promise(() => {}));
     const client = createTelemetryClient({ ...baseConfig, fetchImpl: fetchMock });
-    client.recordStep({ camera: { ok: true } });
+    client.recordStep({ videoTestResults: { errors: [] } as any });
     await flushPromises();
 
     client.destroy();

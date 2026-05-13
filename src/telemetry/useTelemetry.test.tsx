@@ -73,7 +73,7 @@ describe('useTelemetry', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('posts camera result when videoInputTestReport transitions null → value', async () => {
+  it('posts videoTestResults when videoInputTestReport transitions null → value', async () => {
     setSearch(`?t=${tokenFor(fullClaims)}`);
     const { rerender } = renderHook(({ state }) => useTelemetry(state, userAgent), {
       initialProps: { state: baseState() },
@@ -81,15 +81,15 @@ describe('useTelemetry', () => {
 
     rerender({
       state: baseState({
-        videoInputTestReport: { errors: [] } as any,
+        videoInputTestReport: { errors: [], deviceId: 'cam0' } as any,
       }),
     });
 
     await new Promise((r) => setTimeout(r, 0));
-    // Camera transition + browser (on mount) may both have fired — find the camera POST.
-    const cameraCall = fetchMock.mock.calls.find(([, init]) => JSON.parse(init.body).results.camera);
-    expect(cameraCall).toBeDefined();
-    expect(JSON.parse(cameraCall![1].body).results.camera).toEqual({ ok: true });
+    // browserInformation fires on mount and videoTestResults on the transition; locate the latter.
+    const videoCall = fetchMock.mock.calls.find(([, init]) => JSON.parse(init.body).results.videoTestResults);
+    expect(videoCall).toBeDefined();
+    expect(JSON.parse(videoCall![1].body).results.videoTestResults).toEqual({ errors: [], deviceId: 'cam0' });
   });
 
   it('posts completed=true once when activePane reaches Results', async () => {

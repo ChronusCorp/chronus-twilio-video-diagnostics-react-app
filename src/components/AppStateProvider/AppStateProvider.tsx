@@ -9,6 +9,7 @@ import useBitrateTest from './useBitrateTest/useBitrateTest';
 import { VideoInputTest, MediaConnectionBitrateTest, AudioInputTest, AudioOutputTest } from '@twilio/rtc-diagnostics';
 import { ActivePane, TwilioStatus, TwilioAPIStatus } from './types';
 import { useTelemetry } from '../../telemetry';
+import { formatPreflightError } from '../../utils/formatPreflightError';
 
 export { ActivePane };
 export type { TwilioStatus, TwilioAPIStatus };
@@ -324,7 +325,10 @@ export const AppStateProvider: React.FC = ({ children }) => {
         signalingRegion: signalingGateway,
         TURN: turnServers,
       },
-      preflightTestReport: { report: state.preflightTest.report, error: state.preflightTest.error?.message || null },
+      preflightTestReport: {
+        report: state.preflightTest.report,
+        error: formatPreflightError(state.preflightTest.error, state.preflightTest.tokenError),
+      },
       videoTestResults: state.videoInputTestReport,
     };
 
