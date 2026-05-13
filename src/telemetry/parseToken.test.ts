@@ -46,8 +46,30 @@ describe('parseToken', () => {
     }
   );
 
-  it('returns demo mode when endpoint is not https', () => {
+  it('returns demo mode when endpoint is http and NODE_ENV is not development', () => {
+    // jest runs with NODE_ENV='test', so the dev bypass is off — http is rejected.
     const result = parseToken(`?t=${buildToken({ ...validClaims, endpoint: 'http://insecure.test/x' })}`);
+    expect(result).toEqual({ mode: 'demo', reason: 'missing-claim' });
+  });
+
+  it('accepts http endpoint when NODE_ENV is development', () => {
+    const env = process.env as { NODE_ENV?: string };
+    const original = env.NODE_ENV;
+    env.NODE_ENV = 'development';
+    try {
+      const endpoint = 'http://iitm.localhost.com:3001/diagnostics';
+      const result = parseToken(`?t=${buildToken({ ...validClaims, endpoint })}`);
+      expect(result.mode).toBe('post');
+      if (result.mode === 'post') {
+        expect(result.endpoint).toBe(endpoint);
+      }
+    } finally {
+      env.NODE_ENV = original;
+    }
+  });
+
+  it('returns demo mode when endpoint is not a valid URL', () => {
+    const result = parseToken(`?t=${buildToken({ ...validClaims, endpoint: 'not a url' })}`);
     expect(result).toEqual({ mode: 'demo', reason: 'missing-claim' });
   });
 

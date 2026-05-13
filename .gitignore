@@ -33,3 +33,5 @@ serviceAccountKey.json
 lambda-package/
 lambda-deployment.zip
 build.zip
+
+docs/superpowers/

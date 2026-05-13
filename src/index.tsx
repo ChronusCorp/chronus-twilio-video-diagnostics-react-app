@@ -18,6 +18,21 @@ import ReactDOM from 'react-dom';
 import App from './App';
 import theme from './theme';
 import { CssBaseline, MuiThemeProvider } from '@material-ui/core';
+import { parseToken } from './telemetry/parseToken';
+
+function logOnPageLoad() {
+  console.log('[page-load] NODE_ENV:', process.env.NODE_ENV);
+  const hasToken = new URLSearchParams(window.location.search).has('t');
+  if (!hasToken) return;
+  const mode = parseToken(window.location.search);
+  if (mode.mode === 'post') {
+    console.log('[page-load] token is valid');
+  } else {
+    console.warn(`[page-load] token present but invalid (reason: ${mode.reason}) — telemetry disabled`);
+  }
+}
+
+logOnPageLoad();
 
 ReactDOM.render(
   <MuiThemeProvider theme={theme}>
