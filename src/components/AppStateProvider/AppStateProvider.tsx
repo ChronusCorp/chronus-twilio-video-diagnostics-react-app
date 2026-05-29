@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback, useMemo } from 'react';
 import axios, { AxiosError } from 'axios';
 import produce, { current } from 'immer';
 import Video, { PreflightTestReport } from 'twilio-video';
@@ -7,29 +7,12 @@ import usePreflightTest from './usePreflightTest/usePreflightTest';
 import useTwilioStatus from './useTwilioStatus/useTwilioStatus';
 import useBitrateTest from './useBitrateTest/useBitrateTest';
 import { VideoInputTest, MediaConnectionBitrateTest, AudioInputTest, AudioOutputTest } from '@twilio/rtc-diagnostics';
+import { ActivePane, TwilioStatus, TwilioAPIStatus } from './types';
+import { useTelemetry } from '../../telemetry';
+import { formatPreflightError } from '../../utils/formatPreflightError';
 
-export enum ActivePane {
-  GetStarted,
-  DeviceCheck,
-  DeviceError,
-  CameraTest,
-  AudioTest,
-  BrowserTest,
-  Connectivity,
-  Quality,
-  Results,
-}
-
-export type TwilioAPIStatus = 'operational' | 'major_outage' | 'partial_outage' | 'degraded_performance';
-
-export interface TwilioStatus {
-  ['Group Rooms']?: TwilioAPIStatus;
-  ['Go Rooms']?: TwilioAPIStatus;
-  ['Peer-to-Peer Rooms']?: TwilioAPIStatus;
-  ['Recordings']?: TwilioAPIStatus;
-  ['Compositions']?: TwilioAPIStatus;
-  ['Network Traversal Service']?: TwilioAPIStatus;
-}
+export { ActivePane };
+export type { TwilioStatus, TwilioAPIStatus };
 
 interface stateType {
   activePane: ActivePane;
@@ -324,8 +307,9 @@ export const AppStateProvider: React.FC = ({ children }) => {
   const { startBitrateTest } = useBitrateTest(dispatch);
   const { getTwilioStatus } = useTwilioStatus(dispatch);
 
-  const userAgentParser = new UAParser();
-  const userAgentInfo = userAgentParser.getResult();
+  const userAgentInfo = useMemo(() => new UAParser().getResult(), []);
+
+  useTelemetry(state, userAgentInfo);
 
   const downloadFinalTestResults = () => {
     const signalingGateway = state.preflightTest.signalingGatewayReachable ? 'Reachable' : 'Unreachable';
@@ -341,7 +325,10 @@ export const AppStateProvider: React.FC = ({ children }) => {
         signalingRegion: signalingGateway,
         TURN: turnServers,
       },
-      preflightTestReport: { report: state.preflightTest.report, error: state.preflightTest.error?.message || null },
+      preflightTestReport: {
+        report: state.preflightTest.report,
+        error: formatPreflightError(state.preflightTest.error, state.preflightTest.tokenError),
+      },
       videoTestResults: state.videoInputTestReport,
     };
 
